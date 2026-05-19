@@ -276,26 +276,7 @@ if st.button("✨ Generate Summary"):
 
         st.success(summary)
 
-    # Copy button
-    components.html(
-        f"""
-        <button onclick="navigator.clipboard.writeText(`{summary}`)"
-        style="
-        background: linear-gradient(90deg, #7c3aed, #a855f7);
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 10px;
-        font-size: 16px;
-        cursor: pointer;
-        margin-top:10px;
-        ">
-        📋 Copy Summary
-        </button>
-        """,
-        height=60,
-    )
-
+   
     # Download summary
     st.download_button(
         label="⬇️ Download Summary",
