@@ -150,7 +150,6 @@ model, tokenizer = load_model()
 device = get_device()
 
 st.title("📝 AI Text Summarizer")
-st.markdown('<p class="subtitle">Powered by Fine-tuned T5 · Fast · Lightweight</p>', unsafe_allow_html=True)
 st.divider()
 
 col1, col2 = st.columns(2)
