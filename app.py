@@ -4,14 +4,14 @@ import torch
 import re
 import PyPDF2
 
-# Page setup
+# Setup page
 st.set_page_config(
-    page_title="AI Text Summarizer",
-    page_icon="📝",
+    page_title="SnapText",
+    page_icon="⚡",
     layout="centered"
 )
 
-# Custom CSS
+# Custom UI
 st.markdown("""
 <style>
 
@@ -22,6 +22,7 @@ st.markdown("""
 h1 {
     color: #c084fc !important;
     text-align: center;
+    font-size: 3rem !important;
 }
 
 .stButton > button {
@@ -43,12 +44,13 @@ h1 {
 .stTextArea textarea {
     background-color: #1e1b4b !important;
     color: white !important;
+    border-radius: 10px;
 }
 
 </style>
 """, unsafe_allow_html=True)
 
-# Load model
+# Load transformer model
 @st.cache_resource
 def load_model():
 
@@ -64,7 +66,7 @@ def load_model():
 
     return model, tokenizer
 
-# Get device
+# Detect device
 def get_device():
 
     if torch.cuda.is_available():
@@ -81,7 +83,7 @@ def clean_data(text):
 
     return text.strip().lower()
 
-# Extract text from PDF
+# Extract PDF text
 def extract_pdf_text(pdf_file):
 
     text = ""
@@ -97,12 +99,12 @@ def extract_pdf_text(pdf_file):
 
     return text
 
-# Extract text from TXT file
+# Extract TXT text
 def extract_txt_text(txt_file):
 
     return txt_file.read().decode("utf-8")
 
-# Generate summary
+# Generate AI summary
 def summarize_text(
     text,
     model,
@@ -115,11 +117,9 @@ def summarize_text(
 
     words = text.split()
 
-    # Limit very large input text
     if len(words) > 800:
         text = " ".join(words[:800])
 
-    # Convert text into tokens
     inputs = tokenizer(
         text,
         padding="max_length",
@@ -132,7 +132,6 @@ def summarize_text(
 
     with torch.no_grad():
 
-        # Generate summary
         summary_ids = model.generate(
             input_ids=inputs["input_ids"],
             attention_mask=inputs["attention_mask"],
@@ -144,7 +143,6 @@ def summarize_text(
             early_stopping=True
         )
 
-    # Decode summary tokens
     summary = tokenizer.decode(
         summary_ids[0],
         skip_special_tokens=True
@@ -152,27 +150,23 @@ def summarize_text(
 
     return summary
 
-# Store history
+# Store session history
 if "history" not in st.session_state:
     st.session_state.history = []
 
 # Load model
-with st.spinner("Loading AI Model..."):
+with st.spinner("Loading Model..."):
 
     model, tokenizer = load_model()
 
     device = get_device()
 
-# App title
-st.title("📝 AI Text Summarizer")
-
-st.write(
-    "Summarize PDFs, TXT files, articles, and dialogues using Transformers."
-)
+# Display title
+st.title("⚡ SnapText")
 
 st.divider()
 
-# Settings section
+# Summary settings
 col1, col2 = st.columns(2)
 
 with col1:
@@ -196,7 +190,7 @@ with col2:
         ]
     )
 
-# Summary length values
+# Set summary length
 length_map = {
     "Short": 50,
     "Medium": 120,
@@ -209,20 +203,20 @@ bullet_mode = summary_style == "Bullet Points"
 
 st.divider()
 
-# File upload
+# Upload files
 uploaded_file = st.file_uploader(
     "Upload PDF or TXT File",
     type=["pdf", "txt"]
 )
 
-# Text input
+# Input text box
 input_text = st.text_area(
-    "Or Paste Text Here",
-    height=220,
-    placeholder="Paste article, conversation, notes..."
+    "Paste Dialogue or Text",
+    height=250,
+    placeholder="Paste your conversation or text here..."
 )
 
-# Generate summary button
+# Generate summary
 if st.button("✨ Generate Summary"):
 
     final_text = ""
@@ -240,7 +234,6 @@ if st.button("✨ Generate Summary"):
 
                 final_text = extract_txt_text(uploaded_file)
 
-    # Read manual text input
     elif input_text.strip() != "":
 
         final_text = input_text
@@ -251,20 +244,9 @@ if st.button("✨ Generate Summary"):
 
         st.stop()
 
-    # Bullet point mode
-    if bullet_mode:
+    input_for_model = "summarize: " + final_text
 
-        input_for_model = (
-            "summarize in bullet points: " + final_text
-        )
-
-    else:
-
-        input_for_model = (
-            "summarize: " + final_text
-        )
-
-    # Generate summary
+    # Generate response
     with st.spinner("Generating Summary..."):
 
         summary = summarize_text(
@@ -277,19 +259,30 @@ if st.button("✨ Generate Summary"):
 
     st.divider()
 
-    # Display summary
+    # Show summary
     st.subheader("📋 Summary")
 
-    st.success(summary)
+    if bullet_mode:
 
-    # Copy summary box
+        bullet_summary = summary.split(". ")
+
+        for point in bullet_summary:
+
+            if point.strip() != "":
+                st.markdown(f"- {point}")
+
+    else:
+
+        st.success(summary)
+
+    # Copy summary
     st.text_area(
         "Copy Summary",
         summary,
         height=150
     )
 
-    # Download summary button
+    # Download summary
     st.download_button(
         label="⬇️ Download Summary",
         data=summary,
@@ -326,7 +319,7 @@ if st.button("✨ Generate Summary"):
         f"{compression}%"
     )
 
-    # Save history
+    # Save summary history
     st.session_state.history.append({
 
         "input": final_text[:100],
@@ -334,7 +327,7 @@ if st.button("✨ Generate Summary"):
         "summary": summary
     })
 
-# Show recent summaries
+# Display previous summaries
 if st.session_state.history:
 
     st.divider()
