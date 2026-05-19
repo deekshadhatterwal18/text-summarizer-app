@@ -3,6 +3,7 @@ from transformers import T5ForConditionalGeneration, T5Tokenizer
 import torch
 import re
 import PyPDF2
+import streamlit.components.v1 as components
 
 # Setup page
 st.set_page_config(
@@ -150,7 +151,7 @@ def summarize_text(
 
     return summary
 
-# Store session history
+# Store history
 if "history" not in st.session_state:
     st.session_state.history = []
 
@@ -161,12 +162,12 @@ with st.spinner("Loading Model..."):
 
     device = get_device()
 
-# Display title
+# Title
 st.title("⚡ SnapText")
 
 st.divider()
 
-# Summary settings
+# Settings
 col1, col2 = st.columns(2)
 
 with col1:
@@ -190,7 +191,7 @@ with col2:
         ]
     )
 
-# Set summary length
+# Length values
 length_map = {
     "Short": 50,
     "Medium": 120,
@@ -209,14 +210,14 @@ uploaded_file = st.file_uploader(
     type=["pdf", "txt"]
 )
 
-# Input text box
+# Input text
 input_text = st.text_area(
     "Paste Dialogue or Text",
     height=250,
     placeholder="Paste your conversation or text here..."
 )
 
-# Generate summary
+# Generate button
 if st.button("✨ Generate Summary"):
 
     final_text = ""
@@ -246,7 +247,7 @@ if st.button("✨ Generate Summary"):
 
     input_for_model = "summarize: " + final_text
 
-    # Generate response
+    # Generate summary
     with st.spinner("Generating Summary..."):
 
         summary = summarize_text(
@@ -275,11 +276,24 @@ if st.button("✨ Generate Summary"):
 
         st.success(summary)
 
-    # Copy summary
-    st.text_area(
-        "Copy Summary",
-        summary,
-        height=150
+    # Copy button
+    components.html(
+        f"""
+        <button onclick="navigator.clipboard.writeText(`{summary}`)"
+        style="
+        background: linear-gradient(90deg, #7c3aed, #a855f7);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-size: 16px;
+        cursor: pointer;
+        margin-top:10px;
+        ">
+        📋 Copy Summary
+        </button>
+        """,
+        height=60,
     )
 
     # Download summary
@@ -298,7 +312,7 @@ if st.button("✨ Generate Summary"):
     summary_words = len(summary.split())
 
     compression = round(
-        (summary_words / original_words) * 100,
+        ((original_words - summary_words) / original_words) * 100,
         2
     )
 
@@ -315,11 +329,11 @@ if st.button("✨ Generate Summary"):
     )
 
     c3.metric(
-        "Compression %",
+        "Compression",
         f"{compression}%"
     )
 
-    # Save summary history
+    # Save history
     st.session_state.history.append({
 
         "input": final_text[:100],
@@ -327,12 +341,12 @@ if st.button("✨ Generate Summary"):
         "summary": summary
     })
 
-# Display previous summaries
+# Show history
 if st.session_state.history:
 
     st.divider()
 
-    with st.expander("📚 Recent Summaries"):
+    with st.expander("🕘 Recent Summaries"):
 
         for item in reversed(
             st.session_state.history
